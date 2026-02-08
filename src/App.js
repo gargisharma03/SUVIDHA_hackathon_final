@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createComplaint, getComplaintById } from './api';
 
 /**
  * SUVIDHA - Government Public Service Kiosk Application
@@ -10,7 +11,7 @@ import React, { useState } from 'react';
 /**
  * SCREEN 1: Welcome Screen
  */
-const WelcomeScreen = ({ styles, t, setScreen }) => (
+const WelcomeScreen = ({ styles, t, setScreen, speak }) => (   // ← add speak prop
   <div style={styles.screenContainer}>
     <h1 style={styles.title}>🏛️ SUVIDHA</h1>
     <p style={styles.subtitle}>{t.welcomeSubtitle}</p>
@@ -18,21 +19,60 @@ const WelcomeScreen = ({ styles, t, setScreen }) => (
     <button 
       style={styles.button}
       onClick={() => setScreen('language')}
-      onMouseEnter={(e) => e.target.style.backgroundColor = '#1d4ed8'}
-      onMouseLeave={(e) => e.target.style.backgroundColor = '#2563eb'}
+      // ... mouse events ...
     >
-      <span style={styles.ttsIcon}>🔊</span>
+      
       {t.start}
     </button>
+
+    {/* Add clickable speaker for main content */}
+    <span 
+      style={{ cursor: 'pointer', fontSize: '36px', marginLeft: '10px' }}
+      onClick={() => speak(`${t.welcome} - ${t.welcomeSubtitle}. ${t.start}`)}
+      title="Read aloud"
+    >
+      🔊
+    </span>
   </div>
 );
 
 /**
  * SCREEN 2: Language Selection Screen
  */
-const LanguageScreen = ({ styles, t, language, setLanguage, setScreen }) => (
+const LanguageScreen = ({ styles, t, language, setLanguage, setScreen, speak, language: currentLang }) => (
   <div style={styles.screenContainer}>
-    <h2 style={styles.sectionTitle}>{t.selectLanguage}</h2>
+    <div style={{ position: 'relative', width: '100%' }}>
+      <h2 style={styles.sectionTitle}>{t.selectLanguage}</h2>
+      
+      {/* Single speaker – top right */}
+      <span
+        style={{
+          position: 'absolute',
+          top: '0',
+          right: '0',
+          fontSize: '48px',
+          cursor: 'pointer',
+        }}
+        onClick={() => speak(
+          `${t.selectLanguage}. ` +
+          `The available languages are: ` +
+          `English, ` +
+          `Hindi, ` +
+          `Bengali, ` +
+          `Telugu, ` +
+          `Marathi, ` +
+          `Tamil, ` +
+          `and Gujarati. ` +
+          `Please choose one by clicking on it.` +
+          `${t.back} button to go back to welcome screen.`,
+          currentLang
+          
+        )}
+        title="Read aloud"
+      >
+        🔊
+      </span>
+    </div>
     
     <div style={styles.buttonGrid}>
       {[
@@ -66,7 +106,6 @@ const LanguageScreen = ({ styles, t, language, setLanguage, setScreen }) => (
             }
           }}
         >
-          <span style={styles.ttsIcon}>🔊</span>
           {lang.name}
         </button>
       ))}
@@ -81,9 +120,30 @@ const LanguageScreen = ({ styles, t, language, setLanguage, setScreen }) => (
 /**
  * SCREEN 3: Department Selection Screen
  */
-const DepartmentScreen = ({ styles, t, selectDepartment, setScreen }) => (
+const DepartmentScreen = ({ styles, t, selectDepartment, setScreen, speak, language }) => (
   <div style={styles.screenContainer}>
-    <h2 style={styles.sectionTitle}>{t.selectDepartment}</h2>
+    <div style={{ position: 'relative', width: '100%' }}>
+      <h2 style={styles.sectionTitle}>{t.selectDepartment}</h2>
+      
+      <span
+        style={{
+          position: 'absolute',
+          top: '0',
+          right: '0',
+          fontSize: '48px',
+          cursor: 'pointer',
+        }}
+        onClick={() => speak(
+          `${t.selectDepartment}. ` +
+          `${t.availableDepartments} ${t.electricity}, ${t.water}, ${t.gas}, ${t.municipal}. ` +
+          `${t.chooseOneByClicking}.` ,
+          language
+        )}
+        title="Read aloud"
+      >
+        🔊
+      </span>
+    </div>
     
     <div style={styles.buttonGrid}>
       {[
@@ -100,7 +160,6 @@ const DepartmentScreen = ({ styles, t, selectDepartment, setScreen }) => (
           onMouseLeave={(e) => e.target.style.backgroundColor = '#2563eb'}
         >
           <span style={{ fontSize: '40px' }}>{dept.icon}</span>
-          <span style={styles.ttsIcon}>🔊</span>
           {dept.label}
         </button>
       ))}
@@ -115,9 +174,30 @@ const DepartmentScreen = ({ styles, t, selectDepartment, setScreen }) => (
 /**
  * SCREEN 4: Service Selection Screen
  */
-const ServiceScreen = ({ styles, t, selectService, setScreen }) => (
+const ServiceScreen = ({ styles, t, selectService, setScreen, speak, language }) => (
   <div style={styles.screenContainer}>
-    <h2 style={styles.sectionTitle}>{t.selectService}</h2>
+    <div style={{ position: 'relative', width: '100%' }}>
+      <h2 style={styles.sectionTitle}>{t.selectService}</h2>
+      
+      <span
+        style={{
+          position: 'absolute',
+          top: '0',
+          right: '0',
+          fontSize: '48px',
+          cursor: 'pointer',
+        }}
+        onClick={() => speak(
+          `${t.selectService}. ` +
+          `${t.availableServices} ${t.complaint}, ${t.newApplication}, ${t.trackStatus}. ` +
+          `${t.chooseOneByClicking}.`,
+          language
+        )}
+        title="Read aloud"
+      >
+        🔊
+      </span>
+    </div>
     
     <div style={styles.buttonGrid}>
       {[
@@ -133,7 +213,6 @@ const ServiceScreen = ({ styles, t, selectService, setScreen }) => (
           onMouseLeave={(e) => e.target.style.backgroundColor = '#2563eb'}
         >
           <span style={{ fontSize: '40px' }}>{service.icon}</span>
-          <span style={styles.ttsIcon}>🔊</span>
           {service.label}
         </button>
       ))}
@@ -148,77 +227,158 @@ const ServiceScreen = ({ styles, t, selectService, setScreen }) => (
 /**
  * SCREEN 5: Form Screen
  */
-const FormScreen = ({ styles, t, userData, setUserData, handleFormSubmit, setScreen }) => (
-  <div style={styles.screenContainer}>
-    <h2 style={styles.sectionTitle}>{t.fillForm}</h2>
-    
-    <div style={styles.formContainer}>
-      {/* Name Field */}
-      <div style={styles.formGroup}>
-        <label style={styles.label}>
-          <span style={styles.ttsIcon}>🔊</span> {t.name}
-        </label>
-        <input
-          type="text"
-          style={styles.input}
-          value={userData.name}
-          onChange={(e) => setUserData({ ...userData, name: e.target.value })}
-          placeholder={t.name}
-        />
-      </div>
-      
-      {/* Mobile Field */}
-      <div style={styles.formGroup}>
-        <label style={styles.label}>
-          <span style={styles.ttsIcon}>🔊</span> {t.mobile}
-        </label>
-        <input
-          type="tel"
-          maxLength="10"
-          style={styles.input}
-          value={userData.mobile}
-          onChange={(e) => setUserData({ ...userData, mobile: e.target.value.replace(/\D/g, '') })}
-          placeholder="10-digit number"
-        />
-      </div>
-      
-      {/* Problem Description Field */}
-      <div style={styles.formGroup}>
-        <label style={styles.label}>
-          <span style={styles.ttsIcon}>🔊</span> {t.problem}
-        </label>
-        <textarea
-          style={styles.textarea}
-          value={userData.problem}
-          onChange={(e) => setUserData({ ...userData, problem: e.target.value })}
-          placeholder={t.problem}
-        />
-      </div>
-      
-      <div style={styles.navButtons}>
-        <button style={styles.backButton} onClick={() => setScreen('service')}>
-          ← {t.back}
-        </button>
-        <button
-          style={{...styles.button, minWidth: '200px'}}
-          onClick={handleFormSubmit}
-          onMouseEnter={(e) => e.target.style.backgroundColor = '#1d4ed8'}
-          onMouseLeave={(e) => e.target.style.backgroundColor = '#2563eb'}
+const FormScreen = ({ styles, t, userData, setUserData, handleFormSubmit, setScreen, speak, language }) => {
+  const [fileName, setFileName] = useState('');  // to show selected file name
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setFileName(file.name);
+      // Store in userData so we can send to backend
+      setUserData({ ...userData, file_name: file.name });
+    }
+  };
+
+  return (
+    <div style={styles.screenContainer}>
+      <div style={{ position: 'relative', width: '100%' }}>
+        <h2 style={styles.sectionTitle}>{t.fillForm}</h2>
+        
+        <span
+          style={{
+            position: 'absolute',
+            top: '0',
+            right: '0',
+            fontSize: '48px',
+            cursor: 'pointer',
+          }}
+          onClick={() => speak(
+            `${t.fillForm}. ` +
+            `${t.name}: ${userData.name || t.enterYourName}. ` +
+            `${t.mobile}: ${userData.mobile || t.enterMobile}. ` +
+            `${t.problem}: ${userData.problem || t.describeProblem}. ` +
+            `You can also upload a photo or document as proof if needed. ` +
+            `${t.next} when done.`,
+            language
+          )}
+          title="Read aloud"
         >
-          <span style={styles.ttsIcon}>🔊</span>
-          {t.next}
-        </button>
+          🔊
+        </span>
+      </div>
+      
+      <div style={styles.formContainer}>
+        {/* Name */}
+        <div style={styles.formGroup}>
+          <label style={styles.label}>{t.name}</label>
+          <input
+            type="text"
+            style={styles.input}
+            value={userData.name}
+            onChange={(e) => setUserData({ ...userData, name: e.target.value })}
+            placeholder={t.name}
+          />
+        </div>
+
+        {/* Mobile */}
+        <div style={styles.formGroup}>
+          <label style={styles.label}>{t.mobile}</label>
+          <input
+            type="tel"
+            maxLength="10"
+            style={styles.input}
+            value={userData.mobile}
+            onChange={(e) => setUserData({ ...userData, mobile: e.target.value.replace(/\D/g, '') })}
+            placeholder="10-digit number"
+          />
+        </div>
+
+        {/* Problem */}
+        <div style={styles.formGroup}>
+          <label style={styles.label}>{t.problem}</label>
+          <textarea
+            style={styles.textarea}
+            value={userData.problem}
+            onChange={(e) => setUserData({ ...userData, problem: e.target.value })}
+            placeholder={t.problem}
+          />
+        </div>
+
+        {/* NEW: Document Upload */}
+        <div style={styles.formGroup}>
+          <label style={styles.label}>
+            Upload Proof / Photo / Document (optional)
+          </label>
+          <input
+            type="file"
+            accept="image/*,.pdf"
+            onChange={handleFileChange}
+            style={{
+              width: '100%',
+              padding: '15px',
+              fontSize: '22px',
+              border: '3px solid #cbd5e1',
+              borderRadius: '10px',
+              backgroundColor: '#f8fafc',
+            }}
+          />
+          {fileName && (
+            <p style={{ marginTop: '10px', fontSize: '20px', color: '#2563eb' }}>
+              Selected file: {fileName}
+            </p>
+          )}
+        </div>
+
+        <div style={styles.navButtons}>
+          <button style={styles.backButton} onClick={() => setScreen('service')}>
+            ← {t.back}
+          </button>
+          <button
+            style={{...styles.button, minWidth: '200px'}}
+            onClick={handleFormSubmit}
+            onMouseEnter={(e) => e.target.style.backgroundColor = '#1d4ed8'}
+            onMouseLeave={(e) => e.target.style.backgroundColor = '#2563eb'}
+          >
+            {t.next}
+          </button>
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 /**
  * SCREEN 6: Confirm Screen
  */
-const ConfirmScreen = ({ styles, t, userData, handleConfirm, setScreen }) => (
+const ConfirmScreen = ({ styles, t, userData, handleConfirm, setScreen, isSubmitting, speak, language }) => (
   <div style={styles.screenContainer}>
-    <h2 style={styles.sectionTitle}>{t.confirm}</h2>
+    <div style={{ position: 'relative', width: '100%' }}>
+      <h2 style={styles.sectionTitle}>{t.confirm}</h2>
+      
+      <span
+        style={{
+          position: 'absolute',
+          top: '0',
+          right: '0',
+          fontSize: '48px',
+          cursor: 'pointer',
+        }}
+        onClick={() => speak(
+          `${t.confirm}. ${t.reviewAllDetails}. ` +
+          `${t.department}: ${userData.department}. ` +
+          `${t.service}: ${userData.service}. ` +
+          `${t.name}: ${userData.name}. ` +
+          `${t.mobile}: ${userData.mobile}. ` +
+          `${t.problem}: ${userData.problem}. ` +
+          `${t.ifCorrectSubmit}`,
+          language
+        )}
+        title="Read aloud"
+      >
+        🔊
+      </span>
+    </div>
+    
     <p style={{ fontSize: '24px', color: '#64748b', marginBottom: '30px' }}>
       {t.reviewDetails}
     </p>
@@ -255,13 +415,13 @@ const ConfirmScreen = ({ styles, t, userData, handleConfirm, setScreen }) => (
         ← {t.back}
       </button>
       <button
-        style={{...styles.button, backgroundColor: '#22c55e', minWidth: '250px'}}
+        style={{...styles.button, backgroundColor: '#22c55e', minWidth: '250px', opacity: isSubmitting ? 0.6 : 1}}
         onClick={handleConfirm}
-        onMouseEnter={(e) => e.target.style.backgroundColor = '#16a34a'}
-        onMouseLeave={(e) => e.target.style.backgroundColor = '#22c55e'}
+        disabled={isSubmitting}
+        onMouseEnter={(e) => !isSubmitting && (e.target.style.backgroundColor = '#16a34a')}
+        onMouseLeave={(e) => !isSubmitting && (e.target.style.backgroundColor = '#22c55e')}
       >
-        <span style={styles.ttsIcon}>🔊</span>
-        ✓ {t.submit}
+        {isSubmitting ? 'Submitting...' : `✓ ${t.submit}`}
       </button>
     </div>
   </div>
@@ -270,14 +430,40 @@ const ConfirmScreen = ({ styles, t, userData, handleConfirm, setScreen }) => (
 /**
  * SCREEN 7: Receipt Screen
  */
-const ReceiptScreen = ({ styles, t, token, userData, resetApp }) => (
+const ReceiptScreen = ({ styles, t, token, userData, resetApp, speak, language }) => (
   <div style={styles.screenContainer}>
-    <h2 style={{...styles.sectionTitle, color: '#22c55e'}}>✓ {t.receipt}</h2>
+    <div style={{ position: 'relative', width: '100%' }}>
+      <h2 style={{...styles.sectionTitle, color: '#22c55e'}}>✓ {t.receipt}</h2>
+      
+      <span
+        style={{
+          position: 'absolute',
+          top: '0',
+          right: '0',
+          fontSize: '48px',
+          cursor: 'pointer',
+        }}
+        onClick={() => speak(
+          `${t.receipt}. ` +
+          `${t.tokenIs} ${token}. ` +
+          `${t.smsSentTo} ${userData.mobile}. ` +
+          `${t.registeredSuccessfully}. ` +
+          `${t.thankYouMessage}. ${t.keepTokenForRef}.`,
+          language
+        )}
+        title="Read aloud"
+      >
+        🔊
+      </span>
+    </div>
     
     <div style={styles.receiptBox}>
       <p style={styles.receiptText}>{t.tokenNumber}</p>
-      <div style={styles.tokenDisplay}>{token}</div>
-      <p style={styles.receiptText}>📱 {t.smsMessage}</p>
+      <div style={styles.tokenDisplay}>#{token}</div>
+      <p style={{ fontSize: '22px', color: '#166534' }}>
+        {t.registeredSuccessfully}
+      </p>
+      <p style={styles.receiptText}>📱 {t.smsSentTo}</p>
       <p style={styles.receiptText}>{t.mobile}: {userData.mobile}</p>
       <hr style={{ margin: '30px 0', border: 'none', borderTop: '2px dashed #86efac' }} />
       <p style={{...styles.receiptText, fontSize: '30px', fontWeight: 'bold'}}>
@@ -292,11 +478,136 @@ const ReceiptScreen = ({ styles, t, token, userData, resetApp }) => (
       onMouseEnter={(e) => e.target.style.backgroundColor = '#1d4ed8'}
       onMouseLeave={(e) => e.target.style.backgroundColor = '#2563eb'}
     >
-      <span style={styles.ttsIcon}>🔊</span>
       🏠 {t.home}
     </button>
   </div>
 );
+
+const TrackStatusScreen = ({ styles, t, setScreen, speak, language }) => {
+  const [trackId, setTrackId] = useState('');
+  const [trackResult, setTrackResult] = useState(null);
+  const [trackError, setTrackError] = useState('');
+  const [isTracking, setIsTracking] = useState(false);
+
+  const handleTrack = async () => {
+    const id = trackId.trim();
+    if (!id || isNaN(id)) {
+      setTrackError(t.enterValidToken);
+      return;
+    }
+
+    setIsTracking(true);
+    setTrackError('');
+    setTrackResult(null);
+
+    try {
+      const result = await getComplaintById(id);
+      setTrackResult(result);
+    } catch (err) {
+      setTrackError(t.invalidToken);
+    } finally {
+      setIsTracking(false);
+    }
+  };
+
+  return (
+    <div style={styles.screenContainer}>
+      <div style={{ position: 'relative', width: '100%' }}>
+        <h2 style={styles.sectionTitle}>{t.trackStatus}</h2>
+        
+        <span
+          style={{
+            position: 'absolute',
+            top: '0',
+            right: '0',
+            fontSize: '48px',
+            cursor: 'pointer',
+          }}
+          onClick={() => speak(
+            `${t.trackStatus}. ` +
+            `${t.enterTokenToTrack}. ` +
+            `${t.clickTrackToSeeStatus}.`,
+            language
+          )}
+          title="Read aloud"
+        >
+          🔊
+        </span>
+      </div>
+      
+      <div style={styles.formGroup}>
+        <label style={styles.label}>
+          {t.tokenNumber}
+        </label>
+        <input
+          type="text"
+          style={styles.input}
+          value={trackId}
+          onChange={(e) => {
+            let val = e.target.value.trim();
+            if (val.startsWith('#')) val = val.substring(1);
+            setTrackId(val);
+          }}
+          placeholder={t.enterTokenInstruction}
+        />
+      </div>
+
+      {trackError && (
+        <p style={{ color: 'red', fontSize: '22px', margin: '15px 0' }}>
+          {trackError}
+        </p>
+      )}
+
+      <div style={styles.navButtons}>
+        <button style={styles.backButton} onClick={() => setScreen('service')}>
+          ← {t.back}
+        </button>
+        <button
+          style={{
+            ...styles.button,
+            minWidth: '250px',
+            opacity: isTracking ? 0.6 : 1,
+          }}
+          onClick={handleTrack}
+          disabled={isTracking}
+        >
+          {isTracking ? 'Checking...' : t.trackStatus}
+        </button>
+      </div>
+
+      {trackResult && (
+        <div style={{
+          marginTop: '40px',
+          backgroundColor: '#f0fdf4',
+          padding: '30px',
+          borderRadius: '15px',
+          border: '2px solid #86efac',
+          width: '100%',
+          maxWidth: '600px'
+        }}>
+          <h3 style={{ color: '#15803d', marginBottom: '20px' }}>
+            {t.complaintDetails}  {/* Add new key if needed */}
+          </h3>
+          
+          <div style={{ fontSize: '22px', lineHeight: '1.6' }}>
+            <p><strong>{t.tokenIs}:</strong> #{trackResult.id}</p>
+            <p><strong>{t.status}:</strong> <span style={{
+              color: trackResult.status === 'RESOLVED' ? '#22c55e' : 
+                     trackResult.status === 'IN_PROGRESS' ? '#f59e0b' : '#ef4444',
+              fontWeight: 'bold'
+            }}>
+              {trackResult.status}
+            </span></p>
+            <p><strong>{t.department} / {t.issue}:</strong> {trackResult.issue_type}</p>
+            <p><strong>{t.description}:</strong> {trackResult.description}</p>
+            <p><strong>{t.location}:</strong> {trackResult.location || t.notProvided}</p>
+            <p><strong>{t.submittedOn}:</strong> {new Date(trackResult.created_at).toLocaleString()}</p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 // ==================== MAIN APP COMPONENT ====================
 
@@ -313,7 +624,11 @@ function App() {
     problem: ''
   });
   const [token, setToken] = useState('');
-
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [trackId, setTrackId] = useState('');
+  const [trackResult, setTrackResult] = useState(null);
+  const [trackError, setTrackError] = useState('');
+  const [isTracking, setIsTracking] = useState(false);
   // ==================== MULTILINGUAL TEXT DATA ====================
   
   const translations = {
@@ -347,7 +662,23 @@ function App() {
       tokenNumber: 'Token Number',
       smsMessage: 'SMS sent to your mobile number',
       thankYou: 'Thank you for using SUVIDHA',
-      keepToken: 'Please keep this token for reference'
+      keepToken: 'Please keep this token for reference',
+      availableLanguages: 'The available languages are',
+      chooseLanguagePrompt: 'Please choose your preferred language by clicking on it.',
+      availableDepartments: 'Available departments are',
+      availableServices: 'Available services are',
+      enterYourName: 'Enter your full name here',
+      enterMobile: 'Enter your 10-digit mobile number here',
+      describeProblem: 'Describe your problem or request here',
+      reviewAllDetails: 'Please review all details below',
+      ifCorrectSubmit: 'If everything is correct, click submit.',
+      tokenIs: 'Token number is',
+      smsSentTo: 'SMS has been sent to',
+      registeredSuccessfully: 'Complaint registered successfully',
+      thankYouMessage: 'Thank you for using SUVIDHA',
+      keepTokenForRef: 'Please keep this token for reference',
+      enterTokenToTrack: 'Enter your token number to track status',
+      clickTrack: 'Click Track to see the current status'
     },
     hi: {
       welcome: 'सुविधा में आपका स्वागत है',
@@ -379,7 +710,23 @@ function App() {
       tokenNumber: 'टोकन नंबर',
       smsMessage: 'आपके मोबाइल नंबर पर SMS भेजा गया',
       thankYou: 'सुविधा का उपयोग करने के लिए धन्यवाद',
-      keepToken: 'कृपया इस टोकन को संदर्भ के लिए रखें'
+      keepToken: 'कृपया इस टोकन को संदर्भ के लिए रखें',
+      availableLanguages: 'उपलब्ध भाषाएँ हैं',
+      chooseLanguagePrompt: 'कृपया अपनी पसंदीदा भाषा पर क्लिक करके चुनें।',
+      availableDepartments: 'उपलब्ध विभाग हैं',
+      availableServices: 'उपलब्ध सेवाएँ हैं',
+      enterYourName: 'यहाँ अपना पूरा नाम दर्ज करें',
+      enterMobile: 'यहाँ अपना 10 अंकों का मोबाइल नंबर दर्ज करें',
+      describeProblem: 'यहाँ अपनी समस्या या अनुरोध का वर्णन करें',
+      reviewAllDetails: 'कृपया नीचे सभी विवरणों की समीक्षा करें',
+      ifCorrectSubmit: 'यदि सब कुछ सही है, तो सबमिट पर क्लिक करें।',
+      tokenIs: 'टोकन नंबर है',
+      smsSentTo: 'आपके मोबाइल पर SMS भेजा गया है',
+      registeredSuccessfully: 'शिकायत सफलतापूर्वक दर्ज की गई',
+      thankYouMessage: 'SUVIDHA का उपयोग करने के लिए धन्यवाद',
+      keepTokenForRef: 'संदर्भ के लिए इस टोकन को रखें',
+      enterTokenToTrack: 'अपना टोकन नंबर दर्ज करें',
+      clickTrack: 'वर्तमान स्थिति देखने के लिए ट्रैक पर क्लिक करें',
     },
     bn: {
       welcome: 'সুবিধায় স্বাগতম',
@@ -411,7 +758,28 @@ function App() {
       tokenNumber: 'টোকেন নম্বর',
       smsMessage: 'আপনার মোবাইল নম্বরে SMS পাঠানো হয়েছে',
       thankYou: 'সুবিধা ব্যবহারের জন্য ধন্যবাদ',
-      keepToken: 'রেফারেন্সের জন্য এই টোকেন রাখুন'
+      keepToken: 'রেফারেন্সের জন্য এই টোকেন রাখুন',
+      availableLanguages: 'উপলব্ধ ভাষাগুলি হলো',
+      chooseLanguagePrompt: 'আপনার পছন্দের ভাষা নির্বাচন করতে এটির উপর ক্লিক করুন।',
+      availableDepartments: 'উপলব্ধ বিভাগগুলি হলো',
+      availableServices: 'উপলব্ধ পরিষেবাগুলি হলো',
+  enterYourName: 'এখানে আপনার পুরো নাম লিখুন',
+  enterMobile: 'এখানে আপনার ১০ সংখ্যার মোবাইল নম্বর লিখুন',
+  describeProblem: 'এখানে আপনার সমস্যা বা অনুরোধ বর্ণনা করুন',
+  reviewAllDetails: 'নীচে সমস্ত বিবরণ পর্যালোচনা করুন',
+  ifCorrectSubmit: 'সবকিছু ঠিক থাকলে সাবমিট বোতামে ক্লিক করুন',
+  tokenIs: 'টোকেন নম্বর হলো',
+  smsSentTo: 'আপনার মোবাইল নম্বরে SMS পাঠানো হয়েছে',
+  registeredSuccessfully: 'অভিযোগ সফলভাবে নিবন্ধিত হয়েছে',
+  thankYouMessage: 'SUVIDHA ব্যবহার করার জন্য ধন্যবাদ',
+  keepTokenForRef: 'রেফারেন্সের জন্য এই টোকেনটি রাখুন',
+  enterTokenToTrack: 'আপনার টোকেন নম্বর লিখুন',
+  clickTrack: 'বর্তমান অবস্থা দেখতে ট্র্যাক বোতামে ক্লিক করুন',
+  enterValidToken: 'দয়া করে বৈধ সংখ্যার টোকেন লিখুন (যেমন ২)',
+  invalidToken: 'অবৈধ টোকেন বা সার্ভার ত্রুটি। দয়া করে আবার চেষ্টা করুন।',
+  enterTokenInstruction: 'আপনার টোকেন নম্বর লিখুন',
+  clickTrackToSeeStatus: 'বর্তমান অবস্থা দেখতে ট্র্যাক বোতামে ক্লিক করুন',
+
     },
     te: {
       welcome: 'సువిధకు స్వాగతం',
@@ -443,7 +811,27 @@ function App() {
       tokenNumber: 'టోకెన్ నంబర్',
       smsMessage: 'మీ మొబైల్ నంబర్‌కు SMS పంపబడింది',
       thankYou: 'సువిధను ఉపయోగించినందుకు ధన్యవాదాలు',
-      keepToken: 'రిఫరెన్స్ కోసం ఈ టోకెన్‌ను ఉంచండి'
+      keepToken: 'రిఫరెన్స్ కోసం ఈ టోకెన్‌ను ఉంచండి',
+      availableLanguages: 'అందుబాటులో ఉన్న భాషలు',
+      chooseLanguagePrompt: 'మీకు ఇష్టమైన భాషను ఎంచుకోవడానికి దానిపై క్లిక్ చేయండి।',
+      availableDepartments: 'అందుబాటులో ఉన్న విభాగాలు',
+  availableServices: 'అందుబాటులో ఉన్న సేవలు',
+  enterYourName: 'మీ పూర్తి పేరును ఇక్కడ నమోదు చేయండి',
+  enterMobile: 'మీ 10 అంకెల మొబైల్ నంబరును ఇక్కడ నమోదు చేయండి',
+  describeProblem: 'మీ సమస్య లేదా అభ్యర్థనను ఇక్కడ వివరించండి',
+  reviewAllDetails: 'దయచేసి క్రింది అన్ని వివరాలను సమీక్షించండి',
+  ifCorrectSubmit: 'ప్రతిదీ సరిగ్గా ఉంటే సబ్మిట్ క్లిక్ చేయండి',
+  tokenIs: 'టోకెన్ నంబరు',
+  smsSentTo: 'మీ మొబైల్ నంబరుకు SMS పంపబడింది',
+  registeredSuccessfully: 'ఫిర్యాదు విజయవంతంగా నమోదైంది',
+  thankYouMessage: 'SUVIDHA ఉపయోగించినందుకు ధన్యవాదాలు',
+  keepTokenForRef: 'రిఫరెన్స్ కోసం ఈ టోకెన్‌ను ఉంచండి',
+  enterTokenToTrack: 'మీ టోకెన్ నంబరును నమోదు చేయండి',
+  clickTrack: 'ప్రస్తుత స్థితిని చూడటానికి ట్రాక్ క్లిక్ చేయండి',
+  enterValidToken: 'దయచేసి చెల్లుబాటు అయ్యే సంఖ్యాత్మక టోకెన్ నమోదు చేయండి (ఉదా. 2)',
+  invalidToken: 'చెల్లని టోకెన్ లేదా సర్వర్ లోపం. దయచేసి మళ్లీ ప్రయత్నించండి.',
+  enterTokenInstruction: 'మీ టోకెన్ నంబరును నమోదు చేయండి',
+  clickTrackToSeeStatus: 'ప్రస్తుత స్థితిని చూడటానికి ట్రాక్ క్లిక్ చేయండి',
     },
     mr: {
       welcome: 'सुविधा मध्ये आपले स्वागत आहे',
@@ -475,7 +863,28 @@ function App() {
       tokenNumber: 'टोकन क्रमांक',
       smsMessage: 'आपल्या मोबाइल नंबरवर SMS पाठवला',
       thankYou: 'सुविधा वापरल्याबद्दल धन्यवाद',
-      keepToken: 'कृपया हे टोकन संदर्भासाठी ठेवा'
+      keepToken: 'कृपया हे टोकन संदर्भासाठी ठेवा',
+      availableLanguages: 'उपलब्ध भाषा आहेत',
+      chooseLanguagePrompt: 'आपली पसंतीची भाषा निवडण्यासाठी त्यावर क्लिक करा।',
+      availableDepartments: 'उपलब्ध विभाग आहेत',
+  availableServices: 'उपलब्ध सेवा आहेत',
+  enterYourName: 'येथे आपले पूर्ण नाव टाका',
+  enterMobile: 'येथे आपला १० अंकी मोबाइल नंबर टाका',
+  describeProblem: 'येथे आपली समस्या किंवा विनंती वर्णन करा',
+  reviewAllDetails: 'कृपया खालील सर्व तपशील तपासा',
+  ifCorrectSubmit: 'सर्व काही बरोबर असल्यास सबमिट क्लिक करा',
+  tokenIs: 'टोकन क्रमांक आहे',
+  smsSentTo: 'आपल्या मोबाइल नंबरवर SMS पाठवला गेला आहे',
+  registeredSuccessfully: 'तक्रार यशस्वीरित्या नोंदवली गेली',
+  thankYouMessage: 'SUVIDHA वापरल्याबद्दल धन्यवाद',
+  keepTokenForRef: 'संदर्भासाठी हा टोकन ठेवा',
+  enterTokenToTrack: 'आपला टोकन क्रमांक टाका',
+  clickTrack: 'सध्याची स्थिती पाहण्यासाठी ट्रॅक क्लिक करा',
+  enterValidToken: 'कृपया वैध संख्येचा टोकन टाका (उदा. २)',
+  invalidToken: 'अवैध टोकन किंवा सर्व्हर त्रुटी. कृपया पुन्हा प्रयत्न करा.',
+  enterTokenInstruction: 'आपला टोकन क्रमांक टाका',
+  clickTrackToSeeStatus: 'सध्याची स्थिती पाहण्यासाठी ट्रॅक क्लिक करा',
+
     },
     ta: {
       welcome: 'சுவிதாவுக்கு வரவேற்கிறோம்',
@@ -507,7 +916,28 @@ function App() {
       tokenNumber: 'டோக்கன் எண்',
       smsMessage: 'உங்கள் மொபைல் எண்ணுக்கு SMS அனுப்பப்பட்டது',
       thankYou: 'சுவிதாவைப் பயன்படுத்தியதற்கு நன்றி',
-      keepToken: 'குறிப்புக்காக இந்த டோக்கனை வைத்திருக்கவும்'
+      keepToken: 'குறிப்புக்காக இந்த டோக்கனை வைத்திருக்கவும்',
+      availableLanguages: 'கிடைக்கக்கூடிய மொழிகள்',
+      chooseLanguagePrompt: 'உங்கள் விருப்பமான மொழியைத் தேர்ந்தெடுக்க அதன் மீது கிளிக் செய்யவும்।',
+      availableDepartments: 'கிடைக்கக்கூடிய துறைகள்',
+  availableServices: 'கிடைக்கக்கூடிய சேவைகள்',
+  enterYourName: 'இங்கு உங்கள் முழு பெயரை உள்ளிடவும்',
+  enterMobile: 'இங்கு உங்கள் 10 இலக்க மொபைல் எண்ணை உள்ளிடவும்',
+  describeProblem: 'இங்கு உங்கள் பிரச்சனை அல்லது கோரிக்கையை விவரிக்கவும்',
+  reviewAllDetails: 'கீழே உள்ள அனைத்து விவரங்களையும் மறுபரிசீலனை செய்யவும்',
+  ifCorrectSubmit: 'எல்லாம் சரியாக இருந்தால் சமர்ப்பி என்பதைக் கிளிக் செய்யவும்',
+  tokenIs: 'டோக்கன் எண்',
+  smsSentTo: 'உங்கள் மொபைல் எண்ணுக்கு SMS அனுப்பப்பட்டது',
+  registeredSuccessfully: 'புகார் வெற்றிகரமாக பதிவு செய்யப்பட்டது',
+  thankYouMessage: 'SUVIDHA பயன்படுத்தியதற்கு நன்றி',
+  keepTokenForRef: 'குறிப்புக்காக இந்த டோக்கனை வைத்திருக்கவும்',
+  enterTokenToTrack: 'உங்கள் டோக்கன் எண்ணை உள்ளிடவும்',
+  clickTrack: 'தற்போதைய நிலையைப் பார்க்க ட்ராக் கிளிக் செய்யவும்',
+  enterValidToken: 'செல்லுபடியாகும் எண் டோக்கனை உள்ளிடவும் (எ.கா. 2)',
+  invalidToken: 'தவறான டோக்கன் அல்லது சர்வர் பிழை. மீண்டும் முயற்சிக்கவும்.',
+  enterTokenInstruction: 'உங்கள் டோக்கன் எண்ணை உள்ளிடவும்',
+  clickTrackToSeeStatus: 'தற்போதைய நிலையைப் பார்க்க ட்ராக் கிளிக் செய்யவும்',
+
     },
     gu: {
       welcome: 'સુવિધામાં આપનું સ્વાગત છે',
@@ -539,9 +969,30 @@ function App() {
       tokenNumber: 'ટોકન નંબર',
       smsMessage: 'તમારા મોબાઈલ નંબર પર SMS મોકલ્યો',
       thankYou: 'સુવિધાનો ઉપયોગ કરવા બદલ આભાર',
-      keepToken: 'કૃપા કરીને સંદર્ભ માટે આ ટોકન રાખો'
+      keepToken: 'કૃપા કરીને સંદર્ભ માટે આ ટોકન રાખો',
+      availableLanguages: 'ઉપલબ્ધ ભાષાઓ છે',
+      chooseLanguagePrompt: 'તમારી પસંદગીની ભાષા પસંદ કરવા માટે તેના પર ક્લિક કરો.',
+      availableDepartments: 'ઉપલબ્ધ વિભાગો છે',
+  availableServices: 'ઉપલબ્ધ સેવાઓ છે',
+  enterYourName: 'અહીં તમારું પૂરું નામ દાખલ કરો',
+  enterMobile: 'અહીં તમારો 10 અંકનો મોબાઈલ નંબર દાખલ કરો',
+  describeProblem: 'અહીં તમારી સમસ્યા અથવા વિનંતીનું વર્ણન કરો',
+  reviewAllDetails: 'નીચેના તમામ વિગતોની સમીક્ષા કરો',
+  ifCorrectSubmit: 'બધું બરાબર હોય તો સબમિટ પર ક્લિક કરો',
+  tokenIs: 'ટોકન નંબર છે',
+  smsSentTo: 'તમારા મોબાઈલ નંબર પર SMS મોકલવામાં આવ્યો છે',
+  registeredSuccessfully: 'ફરિયાદ સફળતાપૂર્વક નોંધાઈ',
+  thankYouMessage: 'SUVIDHA નો ઉપયોગ કરવા બદલ આભાર',
+  keepTokenForRef: 'સંદર્ભ માટે આ ટોકન રાખો',
+  enterTokenToTrack: 'તમારો ટોકન નંબર દાખલ કરો',
+  clickTrack: 'વર્તમાન સ્થિતિ જોવા માટે ટ્રેક પર ક્લિક કરો',
+  enterValidToken: 'કૃપા કરીને માન્ય સંખ્યાત્મક ટોકન દાખલ કરો (દા.ત. 2)',
+  invalidToken: 'અમાન્ય ટોકન અથવા સર્વર ભૂલ. કૃપા કરીને ફરીથી પ્રયાસ કરો.',
+  enterTokenInstruction: 'તમારો ટોકન નંબર દાખલ કરો',
+  clickTrackToSeeStatus: 'વર્તમાન સ્થિતિ જોવા માટે ટ્રેક પર ક્લિક કરો',
+}
     }
-  };
+  
 
   const t = translations[language];
 
@@ -557,8 +1008,13 @@ function App() {
   };
 
   const selectService = (service) => {
-    setUserData({ ...userData, service: service });
-    setScreen('form');
+    setUserData({ ...userData, service });
+
+    if (service === t.trackStatus) {
+      setScreen('track'); // new screen
+    } else {
+      setScreen('form');
+    }
   };
 
   const handleFormSubmit = () => {
@@ -575,10 +1031,28 @@ function App() {
     setScreen('confirm');
   };
 
-  const handleConfirm = () => {
-    const newToken = generateToken();
-    setToken(newToken);
-    setScreen('receipt');
+  const handleConfirm = async () => {
+    setIsSubmitting(true);
+
+    const payload = {
+      name: userData.name.trim(),
+      mobile: userData.mobile.trim(),
+      issue_type: `${userData.department} - ${userData.service}`,
+      description: userData.problem.trim(),
+      location: "Delhi",
+      file_name: userData.file_name || '',  // ← sends the selected file name
+    };
+
+    try {
+      const result = await createComplaint(payload);
+      setToken(result.complaint.id);
+      setScreen('receipt');
+    } catch (err) {
+      alert('Error submitting. Please try again.');
+      console.error(err);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const resetApp = () => {
@@ -790,19 +1264,83 @@ function App() {
       fontSize: '28px'
     }
   };
+  // Add this inside function App() { ... }
+  console.log('t.back =', t.back);
+  const speak = (text, lang = language) => {
+    if (!window.speechSynthesis) {
+      alert("Your browser does not support text-to-speech.");
+      return;
+    }
+
+    window.speechSynthesis.cancel(); // stop any ongoing speech
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = lang === 'hi' ? 'hi-IN' :
+                    lang === 'bn' ? 'bn-IN' :
+                    lang === 'te' ? 'te-IN' :
+                    lang === 'mr' ? 'mr-IN' :
+                    lang === 'ta' ? 'ta-IN' :
+                    lang === 'gu' ? 'gu-IN' :
+                    'en-IN';
+
+    // Wait for voices to load (important fix)
+    const loadVoices = () => {
+      const voices = window.speechSynthesis.getVoices();
+      if (voices.length > 0) {
+        const preferred = voices.find(v => v.lang.startsWith(utterance.lang)) || voices[0];
+        utterance.voice = preferred;
+        window.speechSynthesis.speak(utterance);
+      }
+    };
+
+    // If voices already loaded, speak immediately
+    if (window.speechSynthesis.getVoices().length > 0) {
+      loadVoices();
+    } else {
+      // Wait for voices to load (fires once)
+      window.speechSynthesis.onvoiceschanged = () => {
+        loadVoices();
+        window.speechSynthesis.onvoiceschanged = null; // only once
+      };
+    }
+
+    utterance.rate = 1.0;
+    utterance.pitch = 1.0;
+    utterance.volume = 1.0;
+  };
 
   // ==================== MAIN RENDER ====================
   
   return (
     <div style={styles.container}>
-      {screen === 'welcome' && <WelcomeScreen styles={styles} t={t} setScreen={setScreen} />}
-      {screen === 'language' && <LanguageScreen styles={styles} t={t} language={language} setLanguage={setLanguage} setScreen={setScreen} />}
-      {screen === 'department' && <DepartmentScreen styles={styles} t={t} selectDepartment={selectDepartment} setScreen={setScreen} />}
-      {screen === 'service' && <ServiceScreen styles={styles} t={t} selectService={selectService} setScreen={setScreen} />}
-      {screen === 'form' && <FormScreen styles={styles} t={t} userData={userData} setUserData={setUserData} handleFormSubmit={handleFormSubmit} setScreen={setScreen} />}
-      {screen === 'confirm' && <ConfirmScreen styles={styles} t={t} userData={userData} handleConfirm={handleConfirm} setScreen={setScreen} />}
-      {screen === 'receipt' && <ReceiptScreen styles={styles} t={t} token={token} userData={userData} resetApp={resetApp} />}
-      
+      {screen === 'welcome' && <WelcomeScreen styles={styles} t={t} setScreen={setScreen} speak={speak} />}
+      {screen === 'language' && <LanguageScreen styles={styles} t={t} language={language} setLanguage={setLanguage} setScreen={setScreen} speak={speak} />}
+      {screen === 'department' && <DepartmentScreen styles={styles} t={t} selectDepartment={selectDepartment} setScreen={setScreen} speak={speak} language={language} />}
+      {screen === 'service' && <ServiceScreen styles={styles} t={t} selectService={selectService} setScreen={setScreen} speak={speak} language={language} />}
+      {screen === 'form' && <FormScreen styles={styles} t={t} userData={userData} setUserData={setUserData} handleFormSubmit={handleFormSubmit} setScreen={setScreen} speak={speak} language={language} />}
+      {screen === 'confirm' && (
+        <ConfirmScreen
+          styles={styles}
+          t={t}
+          userData={userData}
+          handleConfirm={handleConfirm}
+          setScreen={setScreen}
+          isSubmitting={isSubmitting}  // ← add this
+          speak={speak}
+          language={language}
+          
+        />
+      )}
+      {screen === 'receipt' && <ReceiptScreen styles={styles} t={t} token={token} userData={userData} resetApp={resetApp} speak={speak} />}
+      {screen === 'track' && (
+        <TrackStatusScreen 
+          styles={styles} 
+          t={t} 
+          setScreen={setScreen}
+          speak={speak} 
+          language={language}
+        />
+      )}
       {screen !== 'welcome' && (
         <div style={{
           marginTop: '30px',
@@ -818,6 +1356,6 @@ function App() {
       )}
     </div>
   );
-}
+};
 
 export default App;
