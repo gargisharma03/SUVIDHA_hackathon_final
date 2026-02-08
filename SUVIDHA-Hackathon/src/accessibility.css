@@ -1,0 +1,26 @@
+/* High contrast mode */
+body.high-contrast,
+body.high-contrast * {
+  background-color: #000 !important;
+  color: #fff !important;
+  border-color: #fff !important;
+}
+
+/* Make icons / images visible in dark mode */
+body.high-contrast img,
+body.high-contrast svg {
+  filter: brightness(1.2) contrast(1.2);
+}
+
+/* Better focus outline for kiosk / accessibility */
+button:focus,
+input:focus,
+select:focus {
+  outline: 4px solid #2563eb;
+  outline-offset: 2px;
+}
+
+/* Allow smooth scaling */
+html {
+  font-size: 16px;
+}

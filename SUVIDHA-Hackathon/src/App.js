@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createComplaint, getComplaintById } from './api';
+import "./accessibility.css";
 
 /**
  * SUVIDHA - Government Public Service Kiosk Application
@@ -629,6 +630,9 @@ function App() {
   const [trackResult, setTrackResult] = useState(null);
   const [trackError, setTrackError] = useState('');
   const [isTracking, setIsTracking] = useState(false);
+  const [highContrast, setHighContrast] = useState(false);
+  const [fontScale, setFontScale] = useState(1);
+
   // ==================== MULTILINGUAL TEXT DATA ====================
   
   const translations = {
@@ -1263,6 +1267,8 @@ function App() {
     ttsIcon: {
       fontSize: '28px'
     }
+   
+
   };
   // Add this inside function App() { ... }
   console.log('t.back =', t.back);
@@ -1310,9 +1316,55 @@ function App() {
   };
 
   // ==================== MAIN RENDER ====================
-  
+  useEffect(() => {
+    document.body.classList.toggle("high-contrast", highContrast);
+  }, [highContrast]);
+
   return (
-    <div style={styles.container}>
+    <div
+    style={{
+      ...styles.container,
+      
+      transform: `scale(${fontScale})`,
+      transformOrigin: "top center",
+      backgroundColor: highContrast ? "#000" : styles.container.backgroundColor,
+      color: highContrast ? "#fff" : "#000"
+    }}
+    >
+      
+  
+    {/* Accessibility bar */}
+    <div style={{
+      alignSelf: 'flex-end',
+      marginBottom: '15px',
+      display: 'flex',
+      gap: '10px'
+    }}>
+      <button
+        onClick={() => setHighContrast(!highContrast)}
+        style={{ padding: '8px 12px', fontSize: '18px' }}
+      >
+        {highContrast ? 'Normal' : 'High contrast'}
+      </button>
+
+      <button
+        onClick={() => setFontScale(s => Math.min(s + 0.1, 1.5))}
+        style={{ padding: '8px 12px', fontSize: '18px' }}
+      >
+        A+
+      </button>
+
+      <button
+        onClick={() => setFontScale(s => Math.max(s - 0.1, 0.8))}
+        style={{ padding: '8px 12px', fontSize: '18px' }}
+      >
+        A-
+      </button>
+    </div>
+
+    
+
+      
       {screen === 'welcome' && <WelcomeScreen styles={styles} t={t} setScreen={setScreen} speak={speak} />}
       {screen === 'language' && <LanguageScreen styles={styles} t={t} language={language} setLanguage={setLanguage} setScreen={setScreen} speak={speak} />}
       {screen === 'department' && <DepartmentScreen styles={styles} t={t} selectDepartment={selectDepartment} setScreen={setScreen} speak={speak} language={language} />}
@@ -1355,7 +1407,9 @@ function App() {
         </div>
       )}
     </div>
+    
   );
+
 };
 
 export default App;
